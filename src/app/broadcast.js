@@ -2,14 +2,20 @@ import Circle from './circle';
 
 const colorChangeCoefficient = 0.001;
 
+const states = {
+    BROADCASTING: 0,
+    INTERFERED: 1,
+    JAMMED: 2,
+    FINISHED: 3,
+};
+
 class Broadcast {
     constructor(sourcePosition, maxRadius, propogationRate) {
         this.circle = new Circle(0, sourcePosition);
         this.maxRadius = maxRadius;
         this.propogationRate = propogationRate;
-        this.ended = false;
-        this.interfered = false;
         this.finishListeners = [];
+        this.state = states.BROADCASTING;
     }
 
     render(canvasContext) {
@@ -17,7 +23,7 @@ class Broadcast {
     }
 
     tick(deltaTime) {
-        if (this.ended || this.interfered) {
+        if (this.state === states.FINISHED) {
             this.circle.colorAlpha = Math.max(this.circle.colorAlpha - (deltaTime * colorChangeCoefficient), 0);
             return;
         }
@@ -30,16 +36,12 @@ class Broadcast {
         }
     }
 
-    interferes(otherBroadcast) {
+    interferesWithBroadcast(otherBroadcast) {
         return this.circle.collides(otherBroadcast.circle);
     }
 
-    interfere() {
-        if (!this.ended) {
-            this.interfered = true;
-            this.circle.color = 'red';
-            this.notifyFinishListeners();
-        }
+    interferesWithTerminal(terminal) {
+        return this.circle.containsPoint(terminal.position) && terminal.isBroadcasting();
     }
 
     onFinish(cb) {
@@ -52,12 +54,24 @@ class Broadcast {
         });
     }
 
-    onEndBroadcast() {
-        if (!this.interfered) {
-            this.ended = true;
-            this.circle.color = 'green';
-            this.notifyFinishListeners();
+    interfere() {
+        if (this.state !== states.JAMMED && this.state !== states.FINISHED) {
+            this.state = states.INTERFERED;
+            this.circle.color = 'red';
         }
+    }
+
+    jam() {
+        this.state = states.JAMMED;
+        this.circle.color = 'yellow';
+    }
+
+    onEndBroadcast() {
+        if (this.state !== states.INTERFERED && this.state !== states.JAMMED) {
+            this.circle.color = 'green';
+        }
+        this.state = states.FINISHED;
+        this.notifyFinishListeners();
     }
 }
 

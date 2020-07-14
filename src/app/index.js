@@ -23,7 +23,8 @@ class App {
         const boundingRect = this.canvasElement.getBoundingClientRect();
         this.updateSize(boundingRect.width, boundingRect.height);
 
-        this.spawnTerminal();
+        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2 - 16, boundingRect.height / 2));
+        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2 + 16, boundingRect.height / 2));
     }
 
     updateSize(width, height) {
@@ -33,10 +34,10 @@ class App {
         this.canvasElement.height = height;
     }
 
-    spawnTerminal() {
+    spawnTerminal(position) {
         const boundingRect = this.canvasElement.getBoundingClientRect();
         const terminal = new Terminal(
-            new vector.Vector2D(
+            position || new vector.Vector2D(
                 Math.random() * boundingRect.width,
                 Math.random() * boundingRect.height
             ),
@@ -98,11 +99,17 @@ class App {
 
             for (let otherIndex = index + 1; otherIndex < this.broadcasts.length; ++otherIndex) {
                 const otherBroadcast = this.broadcasts[otherIndex];
-                if (broadcast.interferes(otherBroadcast)) {
+                if (broadcast.interferesWithBroadcast(otherBroadcast)) {
                     broadcast.interfere();
                     otherBroadcast.interfere();
                 }
             }
+
+            this.terminals.forEach(terminal => {
+                if (broadcast.interferesWithTerminal(terminal)) {
+                    terminal.interfere(broadcast);
+                }
+            });
         });
 
         this.terminals.forEach(terminal => {

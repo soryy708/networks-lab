@@ -20,6 +20,10 @@ class Circle {
     collides(otherCircle) {
         return (this.radius + otherCircle.radius) >= this.position.minus(otherCircle.position).magnitude();
     }
+
+    containsPoint(position) {
+        return this.radius >= this.position.minus(position).magnitude();
+    }
 }
 
 export default Circle;

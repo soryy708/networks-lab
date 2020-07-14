@@ -40,6 +40,16 @@ class Terminal {
         }
     }
 
+    interfere(broadcast) {
+        if (broadcast !== this.currentBroadcast) {
+            this.currentBroadcast.jam();
+        }
+    }
+
+    isBroadcasting() {
+        return !!this.currentBroadcast;
+    }
+
     onBroadcast(cb) {
         this.broadcastListeners.push(cb);
     }
