@@ -4,7 +4,7 @@ import vector from './vector';
 const spawnRate = 0.0005;
 
 const propogationRateCoefficient = 2;
-const maxRadiusCoefficient = 1024;
+const maxRadiusCoefficient = 128;
 
 function nextTime(rateParameter) {
     return - Math.log(1 - Math.random()) / rateParameter;
