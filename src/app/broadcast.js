@@ -1,4 +1,5 @@
 import Circle from './circle';
+import util from './util';
 
 const colorChangeCoefficient = 0.001;
 
@@ -9,13 +10,27 @@ const states = {
     FINISHED: 3,
 };
 
+const broadcastTypes = {
+    RTS: 0,
+    CTS: 1,
+    DATA: 2,
+    ACK: 3,
+};
+
 class Broadcast {
-    constructor(sourcePosition, maxRadius, propogationRate) {
+    constructor(sourcePosition, maxRadius, propogationRate, type) {
         this.circle = new Circle(0, sourcePosition);
         this.maxRadius = maxRadius;
         this.propogationRate = propogationRate;
         this.finishListeners = [];
         this.state = states.BROADCASTING;
+        this.type = type;
+        this.id = util.randomId();
+        this.data = '';
+    }
+
+    static get types() {
+        return broadcastTypes;
     }
 
     render(canvasContext) {

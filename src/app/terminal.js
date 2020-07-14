@@ -16,6 +16,8 @@ class Terminal {
         this.checkIfBusyListeners = [];
         this.currentBroadcast = null;
         this.range = range;
+        this.broadcastQueue = [];
+        this.unackedRtses = [];
     }
 
     render(canvasContext) {
@@ -30,21 +32,35 @@ class Terminal {
         if (this.broadcastTimeAccumulator >= this.nextBroadcastTime) {
             this.nextBroadcastTime = util.nextTime(broadcastRate);
             this.broadcastTimeAccumulator = 0;
+            const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.RTS);
+            this.broadcastQueue.push(broadcast);
+            this.unackedRtses.push(broadcast.id);
+        }
 
-            if (!this.currentBroadcast && !this.channelIsBusy()) {
-                this.currentBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient);
-                this.currentBroadcast.onFinish(() => {
-                    this.notifyBroadcastFinishListeners(this.currentBroadcast);
-                    this.currentBroadcast = null;
-                });
-                this.notifyBroadcastListeners(this.currentBroadcast);
-            }
+        if (!this.currentBroadcast && !this.channelIsBusy() && this.broadcastQueue.length > 0) {
+            this.currentBroadcast = this.broadcastQueue.shift();
+            this.currentBroadcast.onFinish(() => {
+                this.notifyBroadcastFinishListeners(this.currentBroadcast);
+                this.currentBroadcast = null;
+            });
+            this.notifyBroadcastListeners(this.currentBroadcast);
         }
     }
 
-    interfere(broadcast) {
-        if (broadcast !== this.currentBroadcast) {
+    interfere(interferingBroadcast) {
+        if (interferingBroadcast !== this.currentBroadcast) {
             this.currentBroadcast.jam();
+            const broadcast = new Broadcast(this.position, this.currentBroadcast.maxRadius, this.currentBroadcast.propogationRate, this.currentBroadcast.type);
+            broadcast.data = this.currentBroadcast.data;
+            this.broadcastQueue.unshift(broadcast);
+            if (this.currentBroadcast.type === Broadcast.types.RTS) {
+                this.unackedRtses.push(broadcast.id);
+                const oldRtsId = this.currentBroadcast.id;
+                const index = this.unackedRtses.findIndex(id => oldRtsId === id);
+                if (index !== -1) {
+                    this.unackedRtses.splice(index, 1);
+                }
+            }
         }
     }
 
@@ -78,6 +94,17 @@ class Terminal {
 
     ownsBroadcast(broadcast) {
         return broadcast === this.currentBroadcast;
+    }
+
+    receiveBroadcast(broadcast) {
+        if (broadcast.type === Broadcast.types.CTS) {
+            const index = this.unackedRtses.findIndex(id => broadcast.id === id);
+            if (index !== -1) {
+                this.unackedRtses.splice(index, 1);
+                const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
+                this.broadcastQueue.push(broadcast);
+            }
+        }
     }
 }
 

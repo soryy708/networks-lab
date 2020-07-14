@@ -117,8 +117,12 @@ class App {
             }
 
             this.terminals.forEach(terminal => {
-                if (broadcast.interferesWithTerminal(terminal)) {
-                    terminal.interfere(broadcast);
+                if (broadcast.reachesTerminal(terminal)) {
+                    if (broadcast.interferesWithTerminal(terminal)) {
+                        terminal.interfere(broadcast);
+                    } else {
+                        terminal.receiveBroadcast(broadcast);
+                    }
                 }
             });
         });
