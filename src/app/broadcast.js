@@ -11,10 +11,10 @@ const states = {
 };
 
 const broadcastTypes = {
-    RTS: 0,
-    CTS: 1,
-    DATA: 2,
-    ACK: 3,
+    RTS: 'RTS',
+    CTS: 'CTS',
+    DATA: 'DATA',
+    ACK: 'ACK',
 };
 
 class Broadcast {
@@ -35,6 +35,11 @@ class Broadcast {
 
     render(canvasContext) {
         this.circle.render(canvasContext);
+        canvasContext.save();
+        canvasContext.fillStyle = 'white';
+        canvasContext.font = '8px Consolas';
+        canvasContext.fillText(`Type: ${this.type}\n`, this.circle.position.x - 16, this.circle.position.y + 12);
+        canvasContext.restore();
     }
 
     tick(deltaTime) {
