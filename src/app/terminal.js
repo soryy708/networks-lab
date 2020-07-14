@@ -7,7 +7,7 @@ const propogationRateCoefficient = 2;
 const maxRadiusCoefficient = 128;
 
 class Terminal {
-    constructor(position) {
+    constructor(position, range) {
         this.position = position;
         this.nextBroadcastTime = util.nextTime(broadcastRate);
         this.broadcastTimeAccumulator = 0;
@@ -15,6 +15,7 @@ class Terminal {
         this.broadcastFinishListeners = [];
         this.checkIfBusyListeners = [];
         this.currentBroadcast = null;
+        this.range = range;
     }
 
     render(canvasContext) {
@@ -31,7 +32,7 @@ class Terminal {
             this.broadcastTimeAccumulator = 0;
 
             if (!this.currentBroadcast && !this.channelIsBusy()) {
-                this.currentBroadcast = new Broadcast(this.position, Math.random() * maxRadiusCoefficient, (Math.random() + 0.3) * propogationRateCoefficient);
+                this.currentBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient);
                 this.currentBroadcast.onFinish(() => {
                     this.notifyBroadcastFinishListeners(this.currentBroadcast);
                     this.currentBroadcast = null;

@@ -23,8 +23,9 @@ class App {
         const boundingRect = this.canvasElement.getBoundingClientRect();
         this.updateSize(boundingRect.width, boundingRect.height);
 
-        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2 - 16, boundingRect.height / 2));
-        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2 + 16, boundingRect.height / 2));
+        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2, boundingRect.height / 2), 42);
+        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2 + 32, boundingRect.height / 2), 42);
+        this.spawnTerminal(new vector.Vector2D(boundingRect.width/2 - 32, boundingRect.height / 2), 42);
     }
 
     updateSize(width, height) {
@@ -34,13 +35,14 @@ class App {
         this.canvasElement.height = height;
     }
 
-    spawnTerminal(position) {
+    spawnTerminal(position, range) {
         const boundingRect = this.canvasElement.getBoundingClientRect();
         const terminal = new Terminal(
             position || new vector.Vector2D(
                 Math.random() * boundingRect.width,
                 Math.random() * boundingRect.height
             ),
+            range,
         );
         terminal.onCheckIfBusy(() => {
             let isBusy = false;
