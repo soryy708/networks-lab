@@ -40,8 +40,12 @@ class Broadcast {
         return this.circle.collides(otherBroadcast.circle);
     }
 
+    reachesTerminal(terminal) {
+        return this.circle.containsPoint(terminal.position);
+    }
+
     interferesWithTerminal(terminal) {
-        return this.circle.containsPoint(terminal.position) && terminal.isBroadcasting();
+        return this.reachesTerminal(terminal) && terminal.isBroadcasting();
     }
 
     onFinish(cb) {

@@ -42,6 +42,15 @@ class App {
                 Math.random() * boundingRect.height
             ),
         );
+        terminal.onCheckIfBusy(() => {
+            let isBusy = false;
+            this.broadcasts.forEach(broadcast => {
+                if (broadcast.reachesTerminal(terminal) && !terminal.ownsBroadcast(broadcast)) {
+                    isBusy = true;
+                }
+            });
+            return isBusy;
+        });
         terminal.onBroadcast(broadcast => {
             this.broadcasts.push(broadcast);
         });

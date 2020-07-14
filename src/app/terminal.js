@@ -13,6 +13,7 @@ class Terminal {
         this.broadcastTimeAccumulator = 0;
         this.broadcastListeners = [];
         this.broadcastFinishListeners = [];
+        this.checkIfBusyListeners = [];
         this.currentBroadcast = null;
     }
 
@@ -29,7 +30,7 @@ class Terminal {
             this.nextBroadcastTime = util.nextTime(broadcastRate);
             this.broadcastTimeAccumulator = 0;
 
-            if (!this.currentBroadcast) {
+            if (!this.currentBroadcast && !this.channelIsBusy()) {
                 this.currentBroadcast = new Broadcast(this.position, Math.random() * maxRadiusCoefficient, (Math.random() + 0.3) * propogationRateCoefficient);
                 this.currentBroadcast.onFinish(() => {
                     this.notifyBroadcastFinishListeners(this.currentBroadcast);
@@ -58,12 +59,24 @@ class Terminal {
         this.broadcastFinishListeners.push(cb);
     }
 
+    onCheckIfBusy(cb) {
+        this.checkIfBusyListeners.push(cb);
+    }
+
+    channelIsBusy() {
+        return this.checkIfBusyListeners.map(cb => cb()).reduce((prev, cur) => prev || cur, false);
+    }
+
     notifyBroadcastListeners(broadcast) {
         this.broadcastListeners.forEach(cb => cb(broadcast));
     }
 
     notifyBroadcastFinishListeners(broadcast) {
         this.broadcastFinishListeners.forEach(cb => cb(broadcast));
+    }
+
+    ownsBroadcast(broadcast) {
+        return broadcast === this.currentBroadcast;
     }
 }
 
