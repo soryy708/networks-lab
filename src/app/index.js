@@ -1,9 +1,10 @@
-import Circle from './circle';
+import Broadcast from './broadcast';
 import vector from './vector';
 
 const spawnRate = 0.0005;
 
-const propogationRate = 1;
+const propogationRateCoefficient = 2;
+const maxRadiusCoefficient = 1024;
 
 function nextTime(rateParameter) {
     return - Math.log(1 - Math.random()) / rateParameter;
@@ -17,7 +18,7 @@ class App {
         this.nextSpawnTime = nextTime(spawnRate);
         this.spawnTimeAccumulator = 0;
 
-        this.circles = [];
+        this.broadcasts = [];
 
         const boundingRect = this.canvasElement.getBoundingClientRect();
         this.updateSize(boundingRect.width, boundingRect.height);
@@ -43,18 +44,25 @@ class App {
             this.nextSpawnTime = nextTime(spawnRate);
             this.spawnTimeAccumulator = 0;
             
-            this.circles.push(new Circle(Math.random(), new vector.Vector2D(Math.random() * boundingRect.width, Math.random() * boundingRect.height)));
+            this.broadcasts.push(new Broadcast(
+                new vector.Vector2D(
+                    Math.random() * boundingRect.width,
+                    Math.random() * boundingRect.height
+                ),
+                Math.random() * maxRadiusCoefficient,
+                Math.random() * propogationRateCoefficient
+            ));
         }
 
-        this.circles.forEach((circle, index) => {
-            circle.radius += deltaTime * propogationRate / 100;
-            circle.render(this.canvasContext);
+        this.broadcasts.forEach((broadcast, index) => {
+            broadcast.tick(deltaTime);
+            broadcast.render(this.canvasContext);
 
-            for (let otherIndex = index + 1; otherIndex < this.circles.length; ++otherIndex) {
-                const otherCircle = this.circles[otherIndex];
-                if (circle.collides(otherCircle)) {
-                    circle.color = 'red';
-                    otherCircle.color = 'red';
+            for (let otherIndex = index + 1; otherIndex < this.broadcasts.length; ++otherIndex) {
+                const otherBroadcast = this.broadcasts[otherIndex];
+                if (broadcast.interferes(otherBroadcast)) {
+                    broadcast.onInterfere();
+                    otherBroadcast.onInterfere();
                 }
             }
         });
