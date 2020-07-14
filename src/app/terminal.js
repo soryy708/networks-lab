@@ -30,7 +30,7 @@ class Terminal {
             this.broadcastTimeAccumulator = 0;
 
             if (!this.currentBroadcast) {
-                this.currentBroadcast = new Broadcast(this.position, Math.random() * maxRadiusCoefficient, (Math.random() + 0.1) * propogationRateCoefficient);
+                this.currentBroadcast = new Broadcast(this.position, Math.random() * maxRadiusCoefficient, (Math.random() + 0.3) * propogationRateCoefficient);
                 this.currentBroadcast.onFinish(() => {
                     this.notifyBroadcastFinishListeners(this.currentBroadcast);
                     this.currentBroadcast = null;
