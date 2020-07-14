@@ -3,6 +3,7 @@ import vector from './vector';
 import util from './util';
 
 const terminalSpawnRate = 0.0001;
+const terminalDisconnectRate = 0.000005;
 const broadcastDeleteDelay = 1000;
 
 class App {
@@ -12,6 +13,8 @@ class App {
 
         this.nextSpawnTime = util.nextTime(terminalSpawnRate);
         this.spawnTimeAccumulator = 0;
+        this.nextDisconnectTime = util.nextTime(terminalDisconnectRate);
+        this.disconnectTimeAccumulator = 0;
 
         this.broadcasts = [];
         this.doneBroadcasts = [];
@@ -71,6 +74,17 @@ class App {
             this.nextSpawnTime = util.nextTime(terminalSpawnRate);
             this.spawnTimeAccumulator = 0;
             this.spawnTerminal();
+        }
+
+        this.disconnectTimeAccumulator += deltaTime;
+        if (this.disconnectTimeAccumulator >= this.nextDisconnectTime) {
+            this.nextDisconnectTime = util.nextTime(terminalDisconnectRate);
+            this.disconnectTimeAccumulator = 0;
+
+            if (this.terminals.length > 0) {
+                const index = Math.floor(Math.random() * this.terminals.length);
+                this.terminals.splice(index);
+            }
         }
 
         this.doneBroadcasts.forEach(broadcast => {
