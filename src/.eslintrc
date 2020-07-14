@@ -1,0 +1,8 @@
+{
+    "env": {
+        "node": false
+    },
+    "rules": {
+        "import/no-commonjs": "error"
+    }
+}
