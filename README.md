@@ -2,6 +2,7 @@
 
 1. [Download NodeJS LTS](https://nodejs.org/en/)
 2. Install NodeJS
+3. Run `npm install`
 
 # How to run
 
