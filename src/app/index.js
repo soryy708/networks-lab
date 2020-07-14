@@ -1,27 +1,24 @@
-import Broadcast from './broadcast';
+import Terminal from './terminal';
 import vector from './vector';
+import util from './util';
 
-const spawnRate = 0.0005;
-
-const propogationRateCoefficient = 2;
-const maxRadiusCoefficient = 128;
-
-function nextTime(rateParameter) {
-    return - Math.log(1 - Math.random()) / rateParameter;
-}
+const terminalSpawnRate = 0.0001;
 
 class App {
     constructor(canvasElement) {
         this.canvasElement = canvasElement;
         this.canvasContext = canvasElement.getContext('2d');
 
-        this.nextSpawnTime = nextTime(spawnRate);
+        this.nextSpawnTime = util.nextTime(terminalSpawnRate);
         this.spawnTimeAccumulator = 0;
 
         this.broadcasts = [];
+        this.terminals = [];
 
         const boundingRect = this.canvasElement.getBoundingClientRect();
         this.updateSize(boundingRect.width, boundingRect.height);
+
+        this.spawnTerminal();
     }
 
     updateSize(width, height) {
@@ -29,6 +26,20 @@ class App {
         this.height = height;
         this.canvasElement.width = width;
         this.canvasElement.height = height;
+    }
+
+    spawnTerminal() {
+        const boundingRect = this.canvasElement.getBoundingClientRect();
+        const terminal = new Terminal(
+            new vector.Vector2D(
+                Math.random() * boundingRect.width,
+                Math.random() * boundingRect.height
+            ),
+        );
+        terminal.onBroadcast(broadcast => {
+            this.broadcasts.push(broadcast);
+        });
+        this.terminals.push(terminal);
     }
 
     tick(deltaTime) {
@@ -41,17 +52,9 @@ class App {
 
         this.spawnTimeAccumulator += deltaTime;
         if (this.spawnTimeAccumulator >= this.nextSpawnTime) {
-            this.nextSpawnTime = nextTime(spawnRate);
+            this.nextSpawnTime = util.nextTime(terminalSpawnRate);
             this.spawnTimeAccumulator = 0;
-            
-            this.broadcasts.push(new Broadcast(
-                new vector.Vector2D(
-                    Math.random() * boundingRect.width,
-                    Math.random() * boundingRect.height
-                ),
-                Math.random() * maxRadiusCoefficient,
-                Math.random() * propogationRateCoefficient
-            ));
+            this.spawnTerminal();
         }
 
         this.broadcasts.forEach((broadcast, index) => {
@@ -61,17 +64,22 @@ class App {
             for (let otherIndex = index + 1; otherIndex < this.broadcasts.length; ++otherIndex) {
                 const otherBroadcast = this.broadcasts[otherIndex];
                 if (broadcast.interferes(otherBroadcast)) {
-                    broadcast.onInterfere();
-                    otherBroadcast.onInterfere();
+                    broadcast.interfere();
+                    otherBroadcast.interfere();
                 }
             }
+        });
+
+        this.terminals.forEach(terminal => {
+            terminal.tick(deltaTime);
+            terminal.render(this.canvasContext);
         });
     }
 }
 
 function init(canvasElement) {
     const app = new App(canvasElement);
-    const framesPerSecond = 120;
+    const framesPerSecond = 24;
     let prevTime = Date.now();
     setInterval(() => {
         app.tick(Date.now() - prevTime);

@@ -6,6 +6,7 @@ class Circle {
     }
 
     render(canvasContext) {
+        canvasContext.fillStyle = 'transparent';
         canvasContext.strokeStyle = this.color;
         canvasContext.beginPath();
         canvasContext.arc(this.position.x, this.position.y, this.radius, 0, 2 * Math.PI);

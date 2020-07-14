@@ -7,6 +7,7 @@ class Broadcast {
         this.propogationRate = propogationRate;
         this.ended = false;
         this.interfered = false;
+        this.finishListeners = [];
     }
 
     render(canvasContext) {
@@ -30,17 +31,29 @@ class Broadcast {
         return this.circle.collides(otherBroadcast.circle) && !this.ended && !otherBroadcast.ended && !this.interfered && !otherBroadcast.interfered;
     }
 
-    onInterfere() {
+    interfere() {
         if (!this.ended) {
             this.interfered = true;
             this.circle.color = 'red';
+            this.notifyFinishListeners();
         }
+    }
+
+    onFinish(cb) {
+        this.finishListeners.push(cb);
+    }
+
+    notifyFinishListeners() {
+        this.finishListeners.forEach(cb => {
+            cb(this);
+        });
     }
 
     onEndBroadcast() {
         if (!this.interfered) {
             this.ended = true;
             this.circle.color = 'green';
+            this.notifyFinishListeners();
         }
     }
 }
