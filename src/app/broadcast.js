@@ -1,5 +1,7 @@
 import Circle from './circle';
 
+const colorChangeCoefficient = 0.001;
+
 class Broadcast {
     constructor(sourcePosition, maxRadius, propogationRate) {
         this.circle = new Circle(0, sourcePosition);
@@ -16,6 +18,7 @@ class Broadcast {
 
     tick(deltaTime) {
         if (this.ended || this.interfered) {
+            this.circle.colorAlpha = Math.max(this.circle.colorAlpha - (deltaTime * colorChangeCoefficient), 0);
             return;
         }
 
@@ -28,7 +31,7 @@ class Broadcast {
     }
 
     interferes(otherBroadcast) {
-        return this.circle.collides(otherBroadcast.circle) && !this.ended && !otherBroadcast.ended && !this.interfered && !otherBroadcast.interfered;
+        return this.circle.collides(otherBroadcast.circle);
     }
 
     interfere() {

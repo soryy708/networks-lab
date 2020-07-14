@@ -12,6 +12,7 @@ class Terminal {
         this.nextBroadcastTime = util.nextTime(broadcastRate);
         this.broadcastTimeAccumulator = 0;
         this.broadcastListeners = [];
+        this.broadcastFinishListeners = [];
         this.currentBroadcast = null;
     }
 
@@ -31,6 +32,7 @@ class Terminal {
             if (!this.currentBroadcast) {
                 this.currentBroadcast = new Broadcast(this.position, Math.random() * maxRadiusCoefficient, (Math.random() + 0.1) * propogationRateCoefficient);
                 this.currentBroadcast.onFinish(() => {
+                    this.notifyBroadcastFinishListeners(this.currentBroadcast);
                     this.currentBroadcast = null;
                 });
                 this.notifyBroadcastListeners(this.currentBroadcast);
@@ -42,8 +44,16 @@ class Terminal {
         this.broadcastListeners.push(cb);
     }
 
+    onBroadcastFinish(cb) {
+        this.broadcastFinishListeners.push(cb);
+    }
+
     notifyBroadcastListeners(broadcast) {
         this.broadcastListeners.forEach(cb => cb(broadcast));
+    }
+
+    notifyBroadcastFinishListeners(broadcast) {
+        this.broadcastFinishListeners.forEach(cb => cb(broadcast));
     }
 }
 

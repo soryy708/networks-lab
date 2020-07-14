@@ -3,6 +3,7 @@ import vector from './vector';
 import util from './util';
 
 const terminalSpawnRate = 0.0001;
+const broadcastDeleteDelay = 1000;
 
 class App {
     constructor(canvasElement) {
@@ -13,6 +14,7 @@ class App {
         this.spawnTimeAccumulator = 0;
 
         this.broadcasts = [];
+        this.doneBroadcasts = [];
         this.terminals = [];
 
         const boundingRect = this.canvasElement.getBoundingClientRect();
@@ -39,6 +41,20 @@ class App {
         terminal.onBroadcast(broadcast => {
             this.broadcasts.push(broadcast);
         });
+        terminal.onBroadcastFinish(broadcast => {
+            const index = this.broadcasts.findIndex(b => b === broadcast);
+            if (index !== -1) {
+                this.broadcasts.splice(index, 1);
+
+                this.doneBroadcasts.push(broadcast);
+                setTimeout(() => {
+                    const index = this.doneBroadcasts.findIndex(b => b === broadcast);
+                    if (index !== -1) {
+                        this.doneBroadcasts.splice(index, 1);
+                    }
+                }, broadcastDeleteDelay);
+            }
+        });
         this.terminals.push(terminal);
     }
 
@@ -56,6 +72,11 @@ class App {
             this.spawnTimeAccumulator = 0;
             this.spawnTerminal();
         }
+
+        this.doneBroadcasts.forEach(broadcast => {
+            broadcast.tick(deltaTime);
+            broadcast.render(this.canvasContext);
+        });
 
         this.broadcasts.forEach((broadcast, index) => {
             broadcast.tick(deltaTime);
