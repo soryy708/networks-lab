@@ -184,7 +184,7 @@ class Terminal {
                 break;
             }
             case Broadcast.types.ACK: {
-                // TODO: this.someoneElseHasCts = false;
+                this.someoneElseHasCts = false;
                 break;
             }
         }
