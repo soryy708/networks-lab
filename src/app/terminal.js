@@ -25,6 +25,7 @@ class Terminal {
         this.currentBroadcast = null;
         this.range = range;
         this.broadcastQueue = [];
+        this.rtsBroadcastQueue = [];
         this.unackedRtses = [];
         this.someoneElseHasCts = false;
         this.interfereCount = 0;
@@ -41,7 +42,7 @@ class Terminal {
         const canBroadcast = () => {
             return !this.currentBroadcast &&
                 !this.channelIsBusy() &&
-                this.broadcastQueue.length > 0 &&
+                [...this.broadcastQueue, ...this.rtsBroadcastQueue].length > 0 &&
                 !this.someoneElseHasCts &&
                 this.broadcastTimeAccumulator >= this.nextBroadcastTime;
         };
@@ -50,11 +51,13 @@ class Terminal {
         if (this.rtsTimeAccumulator >= this.nextRtsTime) {
             this.nextRtsTime = util.nextTime(rtsRate);
             this.rtsTimeAccumulator = 0;
+            if (this.rtsBroadcastQueue.length === 0) {
             const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.RTS);
             broadcast.source = this;
             broadcast.destination = util.pick(this.getTerminalsInRange());
-            this.broadcastQueue.push(broadcast);
+                this.rtsBroadcastQueue.push(broadcast);
             this.unackedRtses.push(broadcast.id);
+        }
         }
 
         this.broadcastTimeAccumulator += deltaTime;
@@ -63,7 +66,7 @@ class Terminal {
             this.broadcastTimeAccumulator = 0;
         }
         if (canBroadcast()) {
-            this.currentBroadcast = this.broadcastQueue.shift();
+            this.currentBroadcast = this.broadcastQueue.length > 0 ? this.broadcastQueue.shift() : this.rtsBroadcastQueue.shift();
             this.currentBroadcast.onFinish(() => {
                 this.notifyBroadcastFinishListeners(this.currentBroadcast);
                 this.currentBroadcast = null;
@@ -78,14 +81,16 @@ class Terminal {
             const broadcast = new Broadcast(this.position, this.currentBroadcast.maxRadius, this.currentBroadcast.propogationRate, this.currentBroadcast.type);
             broadcast.source = this;
             broadcast.data = this.currentBroadcast.data;
-            this.broadcastQueue.unshift(broadcast);
             if (this.currentBroadcast.type === Broadcast.types.RTS) {
+                this.rtsBroadcastQueue.unshift(broadcast);
                 this.unackedRtses.push(broadcast.id);
                 const oldRtsId = this.currentBroadcast.id;
                 const index = this.unackedRtses.findIndex(id => oldRtsId === id);
                 if (index !== -1) {
                     this.unackedRtses.splice(index, 1);
                 }
+            } else {
+                this.broadcastQueue.unshift(broadcast);
             }
             ++this.interfereCount;
             this.nextBroadcastTime = nextTimeExponentialBackoff(this.interfereCount);
