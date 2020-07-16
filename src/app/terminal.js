@@ -19,6 +19,7 @@ class Terminal {
         this.range = range;
         this.broadcastQueue = [];
         this.unackedRtses = [];
+        this.someoneElseHasCts = false;
     }
 
     render(canvasContext) {
@@ -40,7 +41,7 @@ class Terminal {
             this.unackedRtses.push(broadcast.id);
         }
 
-        if (!this.currentBroadcast && !this.channelIsBusy() && this.broadcastQueue.length > 0) {
+        if (!this.currentBroadcast && !this.channelIsBusy() && this.broadcastQueue.length > 0 && !this.someoneElseHasCts) {
             this.currentBroadcast = this.broadcastQueue.shift();
             this.currentBroadcast.onFinish(() => {
                 this.notifyBroadcastFinishListeners(this.currentBroadcast);
@@ -121,13 +122,17 @@ class Terminal {
                 break;
             }
             case Broadcast.types.CTS: {
-                const index = this.unackedRtses.findIndex(id => receivedBroadcast.data === id);
-                if (index !== -1) {
-                    this.unackedRtses.splice(index, 1);
-                    const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
-                    newBroadcast.source = this;
-                    newBroadcast.destination = receivedBroadcast.source;
-                    this.broadcastQueue.push(newBroadcast);
+                if (receivedBroadcast.destination === this) {
+                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data === id);
+                    if (index !== -1) {
+                        this.unackedRtses.splice(index, 1);
+                        const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
+                        newBroadcast.source = this;
+                        newBroadcast.destination = receivedBroadcast.source;
+                        this.broadcastQueue.push(newBroadcast);
+                    }
+                } else {
+                    this.someoneElseHasCts = true;
                 }
                 break;
             }
@@ -135,6 +140,7 @@ class Terminal {
                 break;
             }
             case Broadcast.types.ACK: {
+                // TODO: this.someoneElseHasCts = false;
                 break;
             }
         }
