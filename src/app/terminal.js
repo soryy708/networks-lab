@@ -145,7 +145,7 @@ class Terminal {
     }
 
     receiveBroadcast(receivedBroadcast) {
-        if (receivedBroadcast.destination === this) {
+        if (receivedBroadcast.destination === this && (receivedBroadcast.types === Broadcast.types.CTS || receivedBroadcast.types === Broadcast.types.ACK)) {
             this.interfereCount = 0;
         }
 
