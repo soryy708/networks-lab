@@ -170,6 +170,13 @@ class Terminal {
                 break;
             }
             case Broadcast.types.DATA: {
+                if (receivedBroadcast.destination === this) {
+                    const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.ACK);
+                    newBroadcast.source = this;
+                    newBroadcast.destination = receivedBroadcast.source;
+                    newBroadcast.data = receivedBroadcast.id;
+                    this.broadcastQueue.push(newBroadcast);
+                }
                 break;
             }
             case Broadcast.types.ACK: {
