@@ -127,11 +127,17 @@ class App {
                 if (broadcast.reachesTerminal(terminal)) {
                     if (broadcast.interferesWithTerminal(terminal) && broadcast.source !== terminal) {
                         broadcast.interfereTerminal(terminal);
-                    } else if(broadcast.isGood()) {
-                        terminal.receiveBroadcast(broadcast);
                     }
                 }
             });
+
+            if (broadcast.isGood()) {
+                this.terminals.forEach(terminal => {
+                    if (broadcast.reachesTerminal(terminal)) {
+                        terminal.receiveBroadcast(broadcast);
+                    }
+            });
+            }
         });
 
         this.terminals.forEach(terminal => {
