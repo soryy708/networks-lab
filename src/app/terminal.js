@@ -111,7 +111,7 @@ class Terminal {
     receiveBroadcast(receivedBroadcast) {
         switch (receivedBroadcast.type) {
             case Broadcast.types.RTS: {
-                if (receivedBroadcast.isGood() && receivedBroadcast.destination === this) {
+                if (receivedBroadcast.destination === this) {
                     const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.CTS);
                     newBroadcast.source = this;
                     newBroadcast.destination = receivedBroadcast.source;

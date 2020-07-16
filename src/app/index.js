@@ -127,7 +127,7 @@ class App {
                 if (broadcast.reachesTerminal(terminal)) {
                     if (broadcast.interferesWithTerminal(terminal)) {
                         broadcast.interfereTerminal(terminal);
-                    } else {
+                    } else if(broadcast.isGood()) {
                         terminal.receiveBroadcast(broadcast);
                     }
                 }
