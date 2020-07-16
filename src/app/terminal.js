@@ -13,6 +13,7 @@ function nextTimeExponentialBackoff(collisionCount) {
 
 class Terminal {
     constructor(position, range) {
+        this.id = util.randomId();
         this.position = position;
         this.nextRtsTime = util.nextTime(rtsRate);
         this.rtsTimeAccumulator = 0;
@@ -145,6 +146,14 @@ class Terminal {
     }
 
     receiveBroadcast(receivedBroadcast) {
+        console.log(`${this.id} Received broadcast`, {
+            id: receivedBroadcast.id,
+            type: receivedBroadcast.type,
+            data: receivedBroadcast.data,
+            source: receivedBroadcast.source && receivedBroadcast.source.id,
+            destination: receivedBroadcast.destination && receivedBroadcast.destination.id,
+        });
+
         if (receivedBroadcast.destination === this && (receivedBroadcast.types === Broadcast.types.CTS || receivedBroadcast.types === Broadcast.types.ACK)) {
             this.interfereCount = 0;
         }
