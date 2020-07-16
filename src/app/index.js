@@ -136,7 +136,7 @@ class App {
                     if (broadcast.reachesTerminal(terminal) && broadcast.source !== terminal) {
                         broadcast.deliverToTerminal(terminal);
                     }
-            });
+                });
             }
         });
 
