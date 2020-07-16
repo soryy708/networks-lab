@@ -1,7 +1,7 @@
 import util from './util';
 import Broadcast from './broadcast';
 
-const rtsRate = 0.0005;
+const rtsRate = 0.0001;
 
 const propogationRateCoefficient = 2;
 const maxRadiusCoefficient = 128;
