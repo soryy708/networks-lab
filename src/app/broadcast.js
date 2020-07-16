@@ -95,7 +95,7 @@ class Broadcast {
 
     interfereBroadcast(broadcast) {
         const index = this.interferedBroadcasts.findIndex(b => b === broadcast);
-        if (index === -1) {
+        if (index === -1 && broadcast !== this) {
             this.interferedBroadcasts.push(broadcast);
             this.interfere();
         }
