@@ -27,6 +27,7 @@ class Broadcast {
         this.type = type;
         this.id = util.randomId();
         this.data = '';
+        this.source = null;
         this.destination = null;
         this.interferedBroadcasts = [];
         this.interferedTerminals = [];
@@ -57,6 +58,10 @@ class Broadcast {
             this.circle.radius = this.maxRadius;
             this.onEndBroadcast();
         }
+    }
+
+    isGood() {
+        return this.state === states.BROADCASTING || this.state === states.FINISHED;
     }
 
     interferesWithBroadcast(otherBroadcast) {

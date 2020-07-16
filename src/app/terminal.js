@@ -34,6 +34,7 @@ class Terminal {
             this.nextBroadcastTime = util.nextTime(broadcastRate);
             this.broadcastTimeAccumulator = 0;
             const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.RTS);
+            broadcast.source = this;
             broadcast.destination = util.pick(this.getTerminalsInRange());
             this.broadcastQueue.push(broadcast);
             this.unackedRtses.push(broadcast.id);
@@ -53,6 +54,7 @@ class Terminal {
         if (interferingBroadcast !== this.currentBroadcast) {
             this.currentBroadcast.jam();
             const broadcast = new Broadcast(this.position, this.currentBroadcast.maxRadius, this.currentBroadcast.propogationRate, this.currentBroadcast.type);
+            broadcast.source = this;
             broadcast.data = this.currentBroadcast.data;
             this.broadcastQueue.unshift(broadcast);
             if (this.currentBroadcast.type === Broadcast.types.RTS) {
@@ -106,13 +108,33 @@ class Terminal {
         return broadcast === this.currentBroadcast;
     }
 
-    receiveBroadcast(broadcast) {
-        if (broadcast.type === Broadcast.types.CTS) {
-            const index = this.unackedRtses.findIndex(id => broadcast.data === id);
-            if (index !== -1) {
-                this.unackedRtses.splice(index, 1);
-                const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
-                this.broadcastQueue.push(broadcast);
+    receiveBroadcast(receivedBroadcast) {
+        switch (receivedBroadcast.type) {
+            case Broadcast.types.RTS: {
+                if (receivedBroadcast.isGood() && receivedBroadcast.destination === this) {
+                    const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.CTS);
+                    newBroadcast.source = this;
+                    newBroadcast.destination = receivedBroadcast.source;
+                    newBroadcast.data = receivedBroadcast.id;
+                    this.broadcastQueue.push(newBroadcast);
+                }
+                break;
+            }
+            case Broadcast.types.CTS: {
+                const index = this.unackedRtses.findIndex(id => receivedBroadcast.data === id);
+                if (index !== -1) {
+                    this.unackedRtses.splice(index, 1);
+                    const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
+                    broadcast.source = this;
+                    this.broadcastQueue.push(broadcast);
+                }
+                break;
+            }
+            case Broadcast.types.DATA: {
+                break;
+            }
+            case Broadcast.types.ACK: {
+                break;
             }
         }
     }
