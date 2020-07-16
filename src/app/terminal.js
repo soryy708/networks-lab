@@ -124,9 +124,10 @@ class Terminal {
                 const index = this.unackedRtses.findIndex(id => receivedBroadcast.data === id);
                 if (index !== -1) {
                     this.unackedRtses.splice(index, 1);
-                    const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
-                    broadcast.source = this;
-                    this.broadcastQueue.push(broadcast);
+                    const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
+                    newBroadcast.source = this;
+                    newBroadcast.destination = receivedBroadcast.source;
+                    this.broadcastQueue.push(newBroadcast);
                 }
                 break;
             }
