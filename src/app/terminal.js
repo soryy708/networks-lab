@@ -38,6 +38,19 @@ class Terminal {
         canvasContext.fill();
     }
 
+    queueBroadcast(type, destination, data, isPriority = false, queue = this.broadcastQueue) {
+        const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, type);
+        newBroadcast.source = this;
+        newBroadcast.destination = destination;
+        newBroadcast.data = data;
+        if (isPriority) {
+            queue.unshift(newBroadcast);
+        } else {
+            queue.push(newBroadcast);
+        }
+        return newBroadcast;
+    }
+
     tick(deltaTime) {
         const canBroadcast = () => {
             return !this.currentBroadcast &&
@@ -52,10 +65,7 @@ class Terminal {
             this.nextRtsTime = util.nextTime(rtsRate);
             this.rtsTimeAccumulator = 0;
             if (this.rtsBroadcastQueue.length === 0) {
-            const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.RTS);
-            broadcast.source = this;
-            broadcast.destination = util.pick(this.getTerminalsInRange());
-                this.rtsBroadcastQueue.push(broadcast);
+                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), null, false, this.rtsBroadcastQueue);
             this.unackedRtses.push(broadcast.id);
         }
         }
@@ -78,19 +88,15 @@ class Terminal {
     interfere(interferingBroadcast) {
         if (interferingBroadcast !== this.currentBroadcast) {
             this.currentBroadcast.jam();
-            const broadcast = new Broadcast(this.position, this.currentBroadcast.maxRadius, this.currentBroadcast.propogationRate, this.currentBroadcast.type);
-            broadcast.source = this;
-            broadcast.data = this.currentBroadcast.data;
+            const broadcast = this.queueBroadcast(this.currentBroadcast.type, this.currentBroadcast.destination, this.currentBroadcast.data, true, this.currentBroadcast.type === Broadcast.types.RTS ? this.rtsBroadcastQueue : this.broadcastQueue);
+            broadcast.maxRadius = this.currentBroadcast.maxRadius;
             if (this.currentBroadcast.type === Broadcast.types.RTS) {
-                this.rtsBroadcastQueue.unshift(broadcast);
                 this.unackedRtses.push(broadcast.id);
                 const oldRtsId = this.currentBroadcast.id;
                 const index = this.unackedRtses.findIndex(id => oldRtsId === id);
                 if (index !== -1) {
                     this.unackedRtses.splice(index, 1);
                 }
-            } else {
-                this.broadcastQueue.unshift(broadcast);
             }
             ++this.interfereCount;
             this.nextBroadcastTime = nextTimeExponentialBackoff(this.interfereCount);
@@ -146,11 +152,7 @@ class Terminal {
         switch (receivedBroadcast.type) {
             case Broadcast.types.RTS: {
                 if (receivedBroadcast.destination === this) {
-                    const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.CTS);
-                    newBroadcast.source = this;
-                    newBroadcast.destination = receivedBroadcast.source;
-                    newBroadcast.data = receivedBroadcast.id;
-                    this.broadcastQueue.push(newBroadcast);
+                    this.queueBroadcast(Broadcast.types.CTS, receivedBroadcast.source, receivedBroadcast.id);
                 }
                 break;
             }
@@ -159,10 +161,7 @@ class Terminal {
                     const index = this.unackedRtses.findIndex(id => receivedBroadcast.data === id);
                     if (index !== -1) {
                         this.unackedRtses.splice(index, 1);
-                        const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.DATA);
-                        newBroadcast.source = this;
-                        newBroadcast.destination = receivedBroadcast.source;
-                        this.broadcastQueue.push(newBroadcast);
+                        this.queueBroadcast(Broadcast.types.DATA, receivedBroadcast.source, receivedBroadcast.id);
                     }
                 } else {
                     this.someoneElseHasCts = true;
@@ -171,11 +170,7 @@ class Terminal {
             }
             case Broadcast.types.DATA: {
                 if (receivedBroadcast.destination === this) {
-                    const newBroadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.ACK);
-                    newBroadcast.source = this;
-                    newBroadcast.destination = receivedBroadcast.source;
-                    newBroadcast.data = receivedBroadcast.id;
-                    this.broadcastQueue.push(newBroadcast);
+                    this.queueBroadcast(Broadcast.types.ACK, receivedBroadcast.source, receivedBroadcast.id);
                 }
                 break;
             }
