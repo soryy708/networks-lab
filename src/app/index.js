@@ -143,7 +143,7 @@ class App {
 
 function init(canvasElement) {
     const app = new App(canvasElement);
-    const framesPerSecond = 24;
+    const framesPerSecond = 60;
     let prevTime = Date.now();
     setInterval(() => {
         app.tick(Date.now() - prevTime);
