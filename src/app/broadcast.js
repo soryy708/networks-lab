@@ -29,8 +29,8 @@ class Broadcast {
         this.data = '';
         this.source = null;
         this.destination = null;
-        this.interferedBroadcasts = [];
-        this.interferedTerminals = [];
+        this.interactedBroadcasts = [];
+        this.interactedTerminals = [];
     }
 
     static get types() {
@@ -94,19 +94,27 @@ class Broadcast {
     }
 
     interfereBroadcast(broadcast) {
-        const index = this.interferedBroadcasts.findIndex(b => b === broadcast);
+        const index = this.interactedBroadcasts.findIndex(b => b === broadcast);
         if (index === -1 && broadcast !== this) {
-            this.interferedBroadcasts.push(broadcast);
+            this.interactedBroadcasts.push(broadcast);
             this.interfere();
         }
     }
 
     interfereTerminal(terminal) {
-        const index = this.interferedTerminals.findIndex(t => t === terminal);
+        const index = this.interactedTerminals.findIndex(t => t === terminal);
         if (index === -1) {
-            this.interferedTerminals.push(terminal);
+            this.interactedTerminals.push(terminal);
             this.interfere();
             terminal.interfere(this);
+        }
+    }
+
+    deliverToTerminal(terminal) {
+        const index = this.interactedTerminals.findIndex(t => t === terminal);
+        if (index === -1) {
+            this.interactedTerminals.push(terminal);
+            terminal.receiveBroadcast(this);
         }
     }
 

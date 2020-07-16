@@ -133,8 +133,8 @@ class App {
 
             if (broadcast.isGood()) {
                 this.terminals.forEach(terminal => {
-                    if (broadcast.reachesTerminal(terminal)) {
-                        terminal.receiveBroadcast(broadcast);
+                    if (broadcast.reachesTerminal(terminal) && broadcast.source !== terminal) {
+                        broadcast.deliverToTerminal(terminal);
                     }
             });
             }
