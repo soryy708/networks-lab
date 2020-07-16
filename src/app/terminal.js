@@ -14,6 +14,7 @@ class Terminal {
         this.broadcastListeners = [];
         this.broadcastFinishListeners = [];
         this.checkIfBusyListeners = [];
+        this.getTerminalsInRangeListeners = [];
         this.currentBroadcast = null;
         this.range = range;
         this.broadcastQueue = [];
@@ -33,6 +34,7 @@ class Terminal {
             this.nextBroadcastTime = util.nextTime(broadcastRate);
             this.broadcastTimeAccumulator = 0;
             const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.RTS);
+            broadcast.destination = util.pick(this.getTerminalsInRange());
             this.broadcastQueue.push(broadcast);
             this.unackedRtses.push(broadcast.id);
         }
@@ -79,9 +81,17 @@ class Terminal {
     onCheckIfBusy(cb) {
         this.checkIfBusyListeners.push(cb);
     }
+    
+    onGetTerminalsInRange(cb) {
+        this.getTerminalsInRangeListeners.push(cb);
+    }
 
     channelIsBusy() {
         return this.checkIfBusyListeners.map(cb => cb()).reduce((prev, cur) => prev || cur, false);
+    }
+
+    getTerminalsInRange() {
+        return this.getTerminalsInRangeListeners.map(cb => cb()).reduce((prev, cur) => [...prev, ...cur], []);
     }
 
     notifyBroadcastListeners(broadcast) {

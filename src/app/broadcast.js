@@ -27,6 +27,7 @@ class Broadcast {
         this.type = type;
         this.id = util.randomId();
         this.data = '';
+        this.destination = null;
         this.interferedBroadcasts = [];
         this.interferedTerminals = [];
     }

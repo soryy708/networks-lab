@@ -2,6 +2,11 @@ function nextTime(rateParameter) {
     return - Math.log(1 - Math.random()) / rateParameter;
 }
 
+function pick(options) {
+    const index = Math.floor(Math.random() * options.length);
+    return options[index];
+}
+
 function randomId() {
     function bool() {
         return !!(Math.round(Math.random()));
@@ -24,11 +29,6 @@ function randomId() {
         return String.fromCharCode(num + offset);
     }
 
-    function pick(options) {
-        const index = Math.floor(Math.random() * options.length);
-        return options[index];
-    }
-
     function string(length) {
         let str = '';
         for (let i = 0; i < length; ++i) {
@@ -42,5 +42,6 @@ function randomId() {
 
 export default {
     nextTime,
+    pick,
     randomId,
 };

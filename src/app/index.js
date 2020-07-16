@@ -1,6 +1,7 @@
 import Terminal from './terminal';
 import vector from './vector';
 import util from './util';
+import Circle from './circle';
 
 const terminalSpawnRate = 0.0001;
 const terminalDisconnectRate = 0.000005;
@@ -52,6 +53,12 @@ class App {
                 }
             });
             return isBusy;
+        });
+        terminal.onGetTerminalsInRange(() => {
+            return this.terminals.filter(otherTerminal => {
+                const rangeCircle = new Circle(terminal.range, terminal.position);
+                return rangeCircle.containsPoint(otherTerminal.position) && otherTerminal !== terminal;
+            });
         });
         terminal.onBroadcast(broadcast => {
             this.broadcasts.push(broadcast);
