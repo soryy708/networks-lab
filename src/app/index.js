@@ -111,15 +111,15 @@ class App {
             for (let otherIndex = index + 1; otherIndex < this.broadcasts.length; ++otherIndex) {
                 const otherBroadcast = this.broadcasts[otherIndex];
                 if (broadcast.interferesWithBroadcast(otherBroadcast)) {
-                    broadcast.interfere();
-                    otherBroadcast.interfere();
+                    broadcast.interfereBroadcast(otherBroadcast);
+                    otherBroadcast.interfereBroadcast(broadcast);
                 }
             }
 
             this.terminals.forEach(terminal => {
                 if (broadcast.reachesTerminal(terminal)) {
                     if (broadcast.interferesWithTerminal(terminal)) {
-                        terminal.interfere(broadcast);
+                        broadcast.interfereTerminal(terminal);
                     } else {
                         terminal.receiveBroadcast(broadcast);
                     }

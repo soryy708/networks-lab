@@ -27,6 +27,8 @@ class Broadcast {
         this.type = type;
         this.id = util.randomId();
         this.data = '';
+        this.interferedBroadcasts = [];
+        this.interferedTerminals = [];
     }
 
     static get types() {
@@ -82,6 +84,23 @@ class Broadcast {
         if (this.state !== states.JAMMED && this.state !== states.FINISHED) {
             this.state = states.INTERFERED;
             this.circle.color = 'red';
+        }
+    }
+
+    interfereBroadcast(broadcast) {
+        const index = this.interferedBroadcasts.findIndex(b => b === broadcast);
+        if (index === -1) {
+            this.interferedBroadcasts.push(broadcast);
+            this.interfere();
+        }
+    }
+
+    interfereTerminal(terminal) {
+        const index = this.interferedTerminals.findIndex(t => t === terminal);
+        if (index === -1) {
+            this.interferedTerminals.push(terminal);
+            this.interfere();
+            terminal.interfere(this);
         }
     }
 
