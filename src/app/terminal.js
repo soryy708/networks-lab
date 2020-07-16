@@ -1,15 +1,22 @@
 import util from './util';
 import Broadcast from './broadcast';
 
-const broadcastRate = 0.0005;
+const rtsRate = 0.0005;
 
 const propogationRateCoefficient = 2;
 const maxRadiusCoefficient = 128;
 
+function nextTimeExponentialBackoff(collisionCount) {
+    const max = Math.pow(2, collisionCount);
+    return Math.floor(Math.random() * max);
+}
+
 class Terminal {
     constructor(position, range) {
         this.position = position;
-        this.nextBroadcastTime = util.nextTime(broadcastRate);
+        this.nextRtsTime = util.nextTime(rtsRate);
+        this.rtsTimeAccumulator = 0;
+        this.nextBroadcastTime = 0;
         this.broadcastTimeAccumulator = 0;
         this.broadcastListeners = [];
         this.broadcastFinishListeners = [];
@@ -20,6 +27,7 @@ class Terminal {
         this.broadcastQueue = [];
         this.unackedRtses = [];
         this.someoneElseHasCts = false;
+        this.interfereCount = 0;
     }
 
     render(canvasContext) {
@@ -30,10 +38,18 @@ class Terminal {
     }
 
     tick(deltaTime) {
-        this.broadcastTimeAccumulator += deltaTime;
-        if (this.broadcastTimeAccumulator >= this.nextBroadcastTime) {
-            this.nextBroadcastTime = util.nextTime(broadcastRate);
-            this.broadcastTimeAccumulator = 0;
+        const canBroadcast = () => {
+            return !this.currentBroadcast &&
+                !this.channelIsBusy() &&
+                this.broadcastQueue.length > 0 &&
+                !this.someoneElseHasCts &&
+                this.broadcastTimeAccumulator >= this.nextBroadcastTime;
+        };
+
+        this.rtsTimeAccumulator += deltaTime;
+        if (this.rtsTimeAccumulator >= this.nextRtsTime) {
+            this.nextRtsTime = util.nextTime(rtsRate);
+            this.rtsTimeAccumulator = 0;
             const broadcast = new Broadcast(this.position, this.range || (Math.random() * maxRadiusCoefficient), (Math.random() + 0.3) * propogationRateCoefficient, Broadcast.types.RTS);
             broadcast.source = this;
             broadcast.destination = util.pick(this.getTerminalsInRange());
@@ -41,7 +57,12 @@ class Terminal {
             this.unackedRtses.push(broadcast.id);
         }
 
-        if (!this.currentBroadcast && !this.channelIsBusy() && this.broadcastQueue.length > 0 && !this.someoneElseHasCts) {
+        this.broadcastTimeAccumulator += deltaTime;
+        if (this.broadcastTimeAccumulator >= this.nextBroadcastTime) {
+            this.nextBroadcastTime = 0;
+            this.broadcastTimeAccumulator = 0;
+        }
+        if (canBroadcast()) {
             this.currentBroadcast = this.broadcastQueue.shift();
             this.currentBroadcast.onFinish(() => {
                 this.notifyBroadcastFinishListeners(this.currentBroadcast);
@@ -66,6 +87,9 @@ class Terminal {
                     this.unackedRtses.splice(index, 1);
                 }
             }
+            ++this.interfereCount;
+            this.nextBroadcastTime = nextTimeExponentialBackoff(this.interfereCount);
+            this.broadcastTimeAccumulator = 0;
         }
     }
 
@@ -110,6 +134,10 @@ class Terminal {
     }
 
     receiveBroadcast(receivedBroadcast) {
+        if (receivedBroadcast.destination === this) {
+            this.interfereCount = 0;
+        }
+
         switch (receivedBroadcast.type) {
             case Broadcast.types.RTS: {
                 if (receivedBroadcast.destination === this) {
