@@ -42,6 +42,14 @@ class Terminal {
         canvasContext.beginPath();
         canvasContext.arc(this.position.x, this.position.y, 5, 0, 2 * Math.PI);
         canvasContext.fill();
+
+        if (this.range) {
+            canvasContext.strokeStyle = '#222';
+            canvasContext.beginPath();
+            canvasContext.arc(this.position.x, this.position.y, this.range, 0, 2 * Math.PI);
+            canvasContext.stroke();
+        }
+
         canvasContext.restore();
     }
 
