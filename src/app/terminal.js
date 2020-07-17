@@ -33,10 +33,17 @@ class Terminal {
     }
 
     render(canvasContext) {
+        canvasContext.save();
+        if (this.someoneElseHasCts) {
+            canvasContext.fillStyle = '#4488aa';
+        } else {
+            canvasContext.fillStyle = '#4488ff';
+        }
         canvasContext.fillStyle = '#4488ff';
         canvasContext.beginPath();
         canvasContext.arc(this.position.x, this.position.y, 5, 0, 2 * Math.PI);
         canvasContext.fill();
+        canvasContext.restore();
     }
 
     queueBroadcast(type, destination, data, isPriority = false, queue = this.broadcastQueue) {
