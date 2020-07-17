@@ -67,8 +67,8 @@ class Terminal {
             this.rtsTimeAccumulator = 0;
             if (this.rtsBroadcastQueue.length === 0) {
                 const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), null, false, this.rtsBroadcastQueue);
-            this.unackedRtses.push(broadcast.id);
-        }
+                this.unackedRtses.push(broadcast.id);
+            }
         }
 
         this.broadcastTimeAccumulator += deltaTime;
