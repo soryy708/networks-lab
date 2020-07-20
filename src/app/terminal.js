@@ -3,7 +3,7 @@ import Broadcast from './broadcast';
 
 const rtsRate = 0.0001;
 
-const dataSizeCoefficient= 50000;
+const dataSizeCoefficient= 1000;
 const propogationRateCoefficient = 2;
 const maxRadiusCoefficient = 128;
 const backoffCoefficient= 500;
@@ -136,7 +136,7 @@ class Terminal {
     onCheckIfBusy(cb) {
         this.checkIfBusyListeners.push(cb);
     }
-    
+
 
     onGetTerminalsInRange(cb) {
         this.getTerminalsInRangeListeners.push(cb);
@@ -184,7 +184,7 @@ class Terminal {
             }
             case Broadcast.types.CTS: {
                 if (receivedBroadcast.destination === this) {
-                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data[0] === id); //changed data->source
+                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data[0] === id);
                     if (index !== -1) {
                         this.unackedRtses.splice(index, 1);
                         this.queueBroadcast(Broadcast.types.DATA, receivedBroadcast.source, receivedBroadcast.id);
