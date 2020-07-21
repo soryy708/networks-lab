@@ -3,12 +3,14 @@ import Broadcast from './broadcast';
 
 const rtsRate = 0.0001;
 
+const dataSizeCoefficient= 1000;
 const propogationRateCoefficient = 2;
 const maxRadiusCoefficient = 128;
+const backoffCoefficient= 500;
 
 function nextTimeExponentialBackoff(collisionCount) {
     const max = Math.pow(2, collisionCount);
-    return Math.floor(Math.random() * max);
+    return Math.floor((Math.random() * max +1) * backoffCoefficient);
 }
 
 class Terminal {
@@ -80,7 +82,7 @@ class Terminal {
             this.nextRtsTime = util.nextTime(rtsRate);
             this.rtsTimeAccumulator = 0;
             if (this.rtsBroadcastQueue.length === 0) {
-                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), null, false, this.rtsBroadcastQueue);
+                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), Math.random()*dataSizeCoefficient, false, this.rtsBroadcastQueue);
                 this.unackedRtses.push(broadcast.id);
             }
         }
@@ -134,7 +136,8 @@ class Terminal {
     onCheckIfBusy(cb) {
         this.checkIfBusyListeners.push(cb);
     }
-    
+
+
     onGetTerminalsInRange(cb) {
         this.getTerminalsInRangeListeners.push(cb);
     }
@@ -175,19 +178,20 @@ class Terminal {
         switch (receivedBroadcast.type) {
             case Broadcast.types.RTS: {
                 if (receivedBroadcast.destination === this) {
-                    this.queueBroadcast(Broadcast.types.CTS, receivedBroadcast.source, receivedBroadcast.id);
+                    this.queueBroadcast(Broadcast.types.CTS, receivedBroadcast.source, [receivedBroadcast.id,receivedBroadcast.data]);
                 }
                 break;
             }
             case Broadcast.types.CTS: {
                 if (receivedBroadcast.destination === this) {
-                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data === id);
+                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data[0] === id);
                     if (index !== -1) {
                         this.unackedRtses.splice(index, 1);
                         this.queueBroadcast(Broadcast.types.DATA, receivedBroadcast.source, receivedBroadcast.id);
                     }
                 } else {
                     this.someoneElseHasCts = true;
+                    this.nextBroadcastTime =receivedBroadcast.data[1];
                 }
                 break;
             }
