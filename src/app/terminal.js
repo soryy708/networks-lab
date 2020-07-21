@@ -1,7 +1,7 @@
 import util from './util';
 import Broadcast from './broadcast';
 
-const rtsRate = 0.0001;
+const rtsRate = 0.00005;
 
 const dataSizeCoefficient= 500;
 const propogationRateCoefficient = 2;
@@ -9,7 +9,7 @@ const maxRadiusCoefficient = 128;
 const backoffCoefficient= 500;
 const diff = 500;
 const siff= 50;
-const maximumAttempts=5;
+const dataTimeout=10000;
 
 function nextTimeExponentialBackoff(collisionCount) {
     const max = Math.pow(2, collisionCount);
@@ -37,6 +37,7 @@ class Terminal {
         this.interfereCount = 0;
         this.sentData=false;
         this.toSend=0;
+        this.dataTimeAccumulator=0;
     }
 
     render(canvasContext) {
@@ -94,11 +95,7 @@ class Terminal {
             this.nextRtsTime = util.nextTime(rtsRate);
             this.rtsTimeAccumulator = 0;
             if (this.rtsBroadcastQueue.length === 0) {
-                let dataTime=Math.random()*dataSizeCoefficient;
-                if (dataTime>500) {
-                    dataTime=500;
-                }
-                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), dataTime, false, this.rtsBroadcastQueue);
+                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), Math.random()*dataSizeCoefficient, false, this.rtsBroadcastQueue);
                 this.unackedRtses.push(broadcast.id);
             }
         }
@@ -117,10 +114,10 @@ class Terminal {
             this.notifyBroadcastListeners(this.currentBroadcast);
         }
         if(this.sentData) {
-            this.reBroadcast(Broadcast.types.DATA,this.toSend);
-            if (this.interfereCount>maximumAttempts) {
-                this.sentData=false;
-                this.interfereCount=0;
+            this.dataTimeAccumulator+=deltaTime;
+            if(this.dataTimeAccumulator>dataTimeout) {
+                this.dataTimeAccumulator=0;
+                this.reBroadcast(Broadcast.types.DATA,this.toSend);
             }
         }
     }
@@ -203,7 +200,7 @@ class Terminal {
         }
         switch (receivedBroadcast.type) {
             case Broadcast.types.RTS: {
-                if (receivedBroadcast.destination === this) {
+                if (receivedBroadcast.destination === this && !this.sentData) {
                     this.queueBroadcast(Broadcast.types.CTS, receivedBroadcast.source, [receivedBroadcast.id,receivedBroadcast.data]);
                 }
                 break;
