@@ -1,12 +1,15 @@
 import util from './util';
 import Broadcast from './broadcast';
 
-const rtsRate = 0.0001;
+const rtsRate = 0.00005;
 
-const dataSizeCoefficient= 1000;
+const dataSizeCoefficient= 500;
 const propogationRateCoefficient = 2;
 const maxRadiusCoefficient = 128;
 const backoffCoefficient= 500;
+const diff = 500;
+const siff= 50;
+const dataTimeout=10000;
 
 function nextTimeExponentialBackoff(collisionCount) {
     const max = Math.pow(2, collisionCount);
@@ -32,6 +35,9 @@ class Terminal {
         this.unackedRtses = [];
         this.someoneElseHasCts = false;
         this.interfereCount = 0;
+        this.sentData=false;
+        this.toSend=0;
+        this.dataTimeAccumulator=0;
     }
 
     render(canvasContext) {
@@ -60,6 +66,13 @@ class Terminal {
         newBroadcast.source = this;
         newBroadcast.destination = destination;
         newBroadcast.data = data;
+        if (type === Broadcast.types.DATA ) {
+            this.nextBroadcastTime=diff;
+        }
+        else if (type === Broadcast.types.ACK) {
+            this.nextBroadcastTime=siff;
+        }
+
         if (isPriority) {
             queue.unshift(newBroadcast);
         } else {
@@ -100,6 +113,17 @@ class Terminal {
             });
             this.notifyBroadcastListeners(this.currentBroadcast);
         }
+        if(this.sentData) {
+            this.dataTimeAccumulator+=deltaTime;
+            if(this.dataTimeAccumulator>dataTimeout) {
+                this.dataTimeAccumulator=0;
+                this.reBroadcast(Broadcast.types.DATA,this.toSend);
+            }
+        }
+    }
+
+    reBroadcast(type,broadcast) {
+        this.queueBroadcast(type, broadcast.source,broadcast.id);
     }
 
     interfere(interferingBroadcast) {
@@ -174,20 +198,21 @@ class Terminal {
         if (receivedBroadcast.destination === this && (receivedBroadcast.types === Broadcast.types.CTS || receivedBroadcast.types === Broadcast.types.ACK)) {
             this.interfereCount = 0;
         }
-
         switch (receivedBroadcast.type) {
             case Broadcast.types.RTS: {
-                if (receivedBroadcast.destination === this) {
+                if (receivedBroadcast.destination === this && !this.sentData) {
                     this.queueBroadcast(Broadcast.types.CTS, receivedBroadcast.source, [receivedBroadcast.id,receivedBroadcast.data]);
                 }
                 break;
             }
             case Broadcast.types.CTS: {
                 if (receivedBroadcast.destination === this) {
-                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data[0] === id);
+                    const index = this.unackedRtses.findIndex(id => receivedBroadcast.data[0] === id); //changed data->source
                     if (index !== -1) {
                         this.unackedRtses.splice(index, 1);
                         this.queueBroadcast(Broadcast.types.DATA, receivedBroadcast.source, receivedBroadcast.id);
+                        this.toSend=receivedBroadcast;
+                        this.sentData=true;
                     }
                 } else {
                     this.someoneElseHasCts = true;
@@ -202,6 +227,7 @@ class Terminal {
                 break;
             }
             case Broadcast.types.ACK: {
+                this.sentData = false;
                 this.someoneElseHasCts = false;
                 break;
             }
