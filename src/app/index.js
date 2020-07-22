@@ -3,8 +3,8 @@ import vector from './vector';
 import util from './util';
 import Circle from './circle';
 
-const terminalSpawnRate = 0.0001;
-const terminalDisconnectRate = 0.000001;
+const terminalSpawnRate = 0.00;
+const terminalDisconnectRate = 0.000;
 const broadcastDeleteDelay = 1000;
 
 class App {

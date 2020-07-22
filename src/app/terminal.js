@@ -1,17 +1,17 @@
 import util from './util';
 import Broadcast from './broadcast';
 
-const rtsRate = 0.00005;
+const rtsRate = 0.0001;
 
-const dataSizeCoefficient= 5000;
-const dataMinSize=500;
-const propogationRateCoefficient = 5;
+const dataSizeCoefficient= 20000;
+const dataMinSize=10000;
+const propogationRateCoefficient = 7.5;
 const maxRadiusCoefficient = 128;
 const backoffCoefficient= 500;
 const diff = 500;
 const siff= 50;
-const dataTimeout=5000;
 const quietModeTimeout=10000;
+const numberOfAttempts=5;
 
 /**
  * Returns milliseconds until next broadcast, based on binary exponential backoff as function of `collisionCount`
@@ -49,7 +49,9 @@ class Terminal {
         this.sentData=false;
         this.toSend=0;
         this.dataTimeAccumulator=0;
-        this.quietModeTime=0;
+        this.dataAttempts=0;
+        this.quietModeTimeAccumulator=0;
+        this.dataTimeout=dataSizeCoefficient*2;
     }
 
     /**
@@ -122,11 +124,18 @@ class Terminal {
                 this.broadcastTimeAccumulator >= this.nextBroadcastTime;
         };
 
-
         if(this.sentData) {
-            if(!this.currentBroadcast) {
-                this.dataTimeAccumulator+=deltaTime;
-                if(this.dataTimeAccumulator>=dataTimeout) {
+            if(!this.currentBroadcast && !this.channelIsBusy()) {
+                this.dataTimeAccumulator+=deltaTime;                
+                if(this.dataAttempts>=numberOfAttempts) {
+                    this.sentData = false;
+                    this.quietModeTime=0;
+                    this.someoneElseHasCts = false;
+                    this.dataTimeout=dataSizeCoefficient*2;
+                }
+                else if(this.dataTimeAccumulator>=this.dataTimeout) {
+                    this.broadcastQueue=[];
+                    this.dataAttempts+=1;
                     this.dataTimeAccumulator=0;
                     this.reBroadcast(Broadcast.types.DATA,this.toSend);
                 }
@@ -139,7 +148,7 @@ class Terminal {
             this.nextRtsTime = util.nextTime(rtsRate);
             this.rtsTimeAccumulator = 0;
             if (this.rtsBroadcastQueue.length === 0) {
-                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), Math.min(Math.random()*dataSizeCoefficient,dataMinSize), false, this.rtsBroadcastQueue);
+                const broadcast = this.queueBroadcast(Broadcast.types.RTS, util.pick(this.getTerminalsInRange()), Math.max(Math.random()*dataSizeCoefficient,dataMinSize), false, this.rtsBroadcastQueue);
                 this.unackedRtses.push(broadcast.id);
             }
         }
@@ -298,6 +307,8 @@ class Terminal {
             // Received RTS
             case Broadcast.types.RTS: {
                 if (receivedBroadcast.destination === this && !this.sentData) {
+                    this.rtsTimeAccumulator=0;
+                    this.nextRtsTime+=receivedBroadcast.data[1];
                     this.queueBroadcast(Broadcast.types.CTS, receivedBroadcast.source, [receivedBroadcast.id,receivedBroadcast.data]);
                 }
                 break;
@@ -305,10 +316,14 @@ class Terminal {
 
             // Received CTS
             case Broadcast.types.CTS: {
+                this.rtsTimeAccumulator=0;
+                this.nextRtsTime+=receivedBroadcast.data[1];
                 if (receivedBroadcast.destination === this) {
                     const index = this.unackedRtses.findIndex(id => receivedBroadcast.data[0] === id);
                     if (index !== -1) {
                         this.unackedRtses.splice(index, 1);
+                        this.dataTimeout=receivedBroadcast.data[1]/numberOfAttempts;
+                        this.broadcastQueue=[];
                         this.queueBroadcast(Broadcast.types.DATA, receivedBroadcast.source, receivedBroadcast.id);
                         this.toSend=receivedBroadcast;
                         this.sentData=true;
@@ -316,7 +331,6 @@ class Terminal {
                 } else {
                     this.quietModeTime=0;
                     this.someoneElseHasCts = true;
-                    this.nextBroadcastTime =receivedBroadcast.data[1];
                 }
                 break;
             }
