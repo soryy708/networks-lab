@@ -3,13 +3,13 @@ import vector from './vector';
 import util from './util';
 import Circle from './circle';
 
-const terminalSpawnRate = 0.0;
-const terminalDisconnectRate = 0.0;
+const terminalSpawnRate = 0.00;
+const terminalDisconnectRate = 0.000;
 const broadcastDeleteDelay = 1000;
 
 class App {
     /**
-     * 
+     *
      * @param {HTMLElement} canvasElement HTML element that is a `<canvas>`
      */
     constructor(canvasElement) {
@@ -49,7 +49,7 @@ class App {
     /**
      * Create a new terminal on `position` with maximum range = `range`
      * @param {Object} position Vector2D
-     * @param {Number} range 
+     * @param {Number} range
      */
     spawnTerminal(position, range) {
         const boundingRect = this.canvasElement.getBoundingClientRect();

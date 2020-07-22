@@ -19,10 +19,10 @@ const broadcastTypes = {
 
 class Broadcast {
     /**
-     * 
+     *
      * @param {Object} sourcePosition Vector2D
-     * @param {Number} maxRadius 
-     * @param {Number} propogationRate 
+     * @param {Number} maxRadius
+     * @param {Number} propogationRate
      * @param {*} type One of `broadcastTypes`
      */
     constructor(sourcePosition, maxRadius, propogationRate, type) {
@@ -82,7 +82,7 @@ class Broadcast {
      * Checks if the signal is pristine, so no interferences happened
      */
     isGood() {
-        return this.state === states.BROADCASTING || this.state === states.FINISHED;
+        return (this.state === states.BROADCASTING || this.state === states.FINISHED) && this.interactedBroadcasts.length === 0;
     }
 
     /**
